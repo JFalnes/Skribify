@@ -1,0 +1,7 @@
+.venv/
+Scribe/__pycache__/
+Scribe/.env
+logs/log.log
+transcription.txt
+setup.py
+downloads/
