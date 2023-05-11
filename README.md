@@ -1,5 +1,5 @@
 # SCRIBE 0.1.2
-Scribe is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-4 and WhisperAI to generate concise summaries from video or audio content. With support for both local files and YouTube videos, Scribe makes it easy to extract valuable insights from your media files.
+Scribe is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-3.5 or GPT4 and WhisperAI to generate concise summaries from video or audio content. With support for both local files and YouTube videos, Scribe makes it easy to extract valuable insights from your media files.
 
 ## **Table of Contents**
 * <u>Features</u>
@@ -32,6 +32,7 @@ Scribe is a powerful transcription and summarization tool that leverages the pow
     ```
 3. Set up your OpenAI API key:
    * Scribe uses GPT4, if you do not have a GPT4 API key, you can request access to the beta [here](https://openai.com/waitlist/gpt-4-api).
+     * If you don't have a key, there is an option to use GPT-3.5 instead. (Not recommended)
    * Obtain an OpenAI API key from OpenAI
    * Create a .env file in the project root directory and add your API key as follows:
 
@@ -46,6 +47,8 @@ Scribe is a powerful transcription and summarization tool that leverages the pow
 
 
 ## **Usage**
+### Important
+Scribe only allows videos up to 25MB's of size, if your Scribe fails, try with a smaller video.
 ### **Command Line Interface**
 Scribe can be used from the command line by providing the required arguments:
 
