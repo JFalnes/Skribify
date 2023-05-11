@@ -1,4 +1,4 @@
-# SCRIBE 0.1.1
+# SCRIBE 0.1.2
 Scribe is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-4 and WhisperAI to generate concise summaries from video or audio content. With support for both local files and YouTube videos, Scribe makes it easy to extract valuable insights from your media files.
 
 ## **Table of Contents**
@@ -93,9 +93,11 @@ py .\Scribe.py --url https://www.youtube.com/watch?v=jNQXAC9IVRw --prompt 'Summa
 ```
 The text discusses elephants and highlights their impressively long fronts as a cool feature.
 ```
+## **Planned Features**
+* Support for files over 25MB
 
-## Contributing
+## **Contributing**
 We welcome contributions! Please feel free to submit a pull request for new features, bug fixes, or improvements.
 
-## License
+## **License**
 Scribe is released under the <u>**GNU General Public License v3.0**</u>. See  [LICENSE](LICENSE) for more information.
