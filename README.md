@@ -1,4 +1,4 @@
-# SCRIBE 0.1.0
+# SCRIBE 0.1.1
 Scribe is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-4 and WhisperAI to generate concise summaries from video or audio content. With support for both local files and YouTube videos, Scribe makes it easy to extract valuable insights from your media files.
 
 ## **Table of Contents**

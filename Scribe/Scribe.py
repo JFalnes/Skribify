@@ -8,7 +8,7 @@ import openai
 from pytube import YouTube
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 load_dotenv()
 
@@ -34,7 +34,7 @@ class Scribe():
     '''
     A class used to transcribe and summarize video or audio content.
     '''
-    def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False):
+    def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False):
         '''
         Initialize Scribe instance.
         
@@ -42,6 +42,7 @@ class Scribe():
         :param prompt: Prompt to be used for summarizing the transcription (default: default_prompt)
         :param url_entry: URL to download video or audio content (default: None)
         :param file_entry: Local file path of video or audio content (default: None)
+        :param flask: Whether or not to run the transcription process in a Flask app (default: False)
         '''
         
         self.url_entry = url_entry
@@ -49,6 +50,7 @@ class Scribe():
         self.prompt = prompt
         self.callback = callback
         self.transcribe_only = transcribe_only
+        self.flask = flask
 
         self.loop = asyncio.get_event_loop()
         self.transcription_done = threading.Event()
@@ -157,21 +159,21 @@ class Scribe():
         
         :param prompt: Prompt to be used for summarizing the transcription
         :param user_prompt: Transcribed content to be summarized
-        :param transcribe_only: Whether to output only the transcribed text (default: False)
         '''
         logging.info('Parsing prompt, please wait.')
 
         try:
-            completion = openai.ChatCompletion.create(
+            loop = asyncio.get_event_loop()
+            completion = await loop.run_in_executor(None, lambda: openai.ChatCompletion.create(
                 model='gpt-4',
                 messages=[
                     {'role': 'user', 'content': f'{prompt}:{user_prompt}'}
                 ]
-                )
+            ))
         except Exception as e:
             logging.error(f'Error during completion: {e}')
             return
-
+        
         logging.info('Prompt parsed.')
         # TODO: Fix unicode escape characters and proper formatting
         response = completion.choices[0].message
@@ -182,8 +184,13 @@ class Scribe():
             f.write(content)
             f.close()
 
-        self.callback(content)
+        if self.flask:
+            await self.callback(content)
+        else:
+            self.callback(content)
+
         self.transcription_done.set()
+
 
     def __enter__(self):
         self.loop = asyncio.new_event_loop()
