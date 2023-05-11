@@ -183,7 +183,10 @@ class Scribe():
                 with open(json_file, 'w') as f:
                     json.dump(self.data_dict, f, indent=4)
                 content = summary['choices'][0]['message']['content']
-                self.callback(content)
+                if self.flask:
+                    await self.callback(content)
+                else:
+                    self.callback(content)
 
 
     def __enter__(self):
