@@ -26,7 +26,10 @@ Scribe is a powerful transcription and summarization tool that leverages the pow
     ```bash
     pip install -r requirements.txt
     ```
-
+    2b. Install as a package:
+    ```bash
+    pip install git+https://github.com/jfalnes/Scribe.git
+    ```
 3. Set up your OpenAI API key:
    * Scribe uses GPT4, if you do not have a GPT4 API key, you can request access to the beta [here](https://openai.com/waitlist/gpt-4-api).
    * Obtain an OpenAI API key from OpenAI
