@@ -9,8 +9,8 @@ from Scribe import Scribe
 def handle_transcription(transcription):
     print(transcription)
 
-url = "URL HERE"
+url = "https://www.youtube.com/watch?v=P8yrUZeFcqc"
 prompt = "Summarize the following text: "
 
-with Scribe(callback=handle_transcription, prompt=prompt, url_entry=url) as scribe:
+with Scribe(callback=handle_transcription, prompt=prompt, url_entry=url, model='gpt-3.5-turbo') as scribe:
     scribe.loop.run_until_complete(scribe.run())
