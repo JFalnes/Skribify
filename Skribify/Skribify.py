@@ -8,7 +8,7 @@ from pytube import YouTube
 import json
 import datetime
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 if not os.path.exists('logs/'):
     os.makedirs('logs/')
@@ -86,13 +86,13 @@ class Summarizer:
             logging.error(f'Error during completion: {e}')
             return None
 
-class Scribe():
+class Skribify():
     '''
     A class used to transcribe and summarize video or audio content.
     '''
     def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4', of='data'):
         '''
-        Initialize Scribe instance.
+        Initialize Skribify instance.
         
         :param callback: Function to call with the transcription result
         :param prompt: Prompt to be used for summarizing the transcription (default: default_prompt)

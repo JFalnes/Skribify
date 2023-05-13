@@ -1,7 +1,7 @@
 import asyncio
-from Scribe import Scribe
+from Skribify import Skribify
 
-class AsyncScribe(Scribe):
+class AsyncSkribify(Skribify):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.loop = asyncio.get_event_loop()

@@ -4,8 +4,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="Scribe",
-    version="0.1.2",
+    name="Skribify",
+    version="0.1.3",
     author="JFalnes",
     author_email="post@falnes.dev",
     description="A transcription and summarization tool",
