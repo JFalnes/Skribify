@@ -25,6 +25,7 @@ def parse_command_line_arguments():
     parser.add_argument('-p','--prompt', type=str, default='Summarize the following text: ', help='Custom prompt for the summarization or path to a file containing the prompt')
     parser.add_argument('-v', '--version', action='version', version=f'Skribify {__version__}')
     parser.add_argument('-t', '--transcribe', action='store_true', help='Output only the transcribed text')
+    parser.add_argument('-m', '--model', type=str, default='gpt-4', help='OpenAI model to use for summarization (default: gpt-4)')
 
     return parser.parse_args()
 
@@ -50,7 +51,7 @@ def main():
 
     prompt = read_prompt(args.prompt)
 
-    with Skribify(callback=handle_transcription, prompt=prompt, url_entry=args.url, file_entry=args.file, transcribe_only=args.transcribe) as skribify:
+    with Skribify(callback=handle_transcription, prompt=prompt, url_entry=args.url, file_entry=args.file, transcribe_only=args.transcribe, model=args.model) as skribify:
         skribify.loop.run_until_complete(skribify.run())
 
         
