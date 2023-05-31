@@ -34,7 +34,7 @@ Skribify is a powerful transcription and summarization tool that leverages the p
    * Skribify uses GPT4, if you do not have a GPT4 API key, you can request access to the beta [here](https://openai.com/waitlist/gpt-4-api).
      * If you don't have a key, there is an option to use GPT-3.5 instead. (Not recommended)
    * Obtain an OpenAI API key from OpenAI
-   * Create a .env file in the project root directory and add your API key as follows:
+   * Create a .env file in the Skribify/ directory and add your API key as follows:
 
        ```makefile
        TOKEN=your_openai_api_key
