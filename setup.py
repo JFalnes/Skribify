@@ -11,7 +11,7 @@ setup(
     description="A transcription and summarization tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/jfalnes/Scribe",
+    url="https://github.com/jfalnes/Skribify",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
