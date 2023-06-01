@@ -1,4 +1,5 @@
+asyncio
+dotenv
 openai
-python-dotenv
 pytube
-
+pydub
