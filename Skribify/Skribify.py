@@ -238,7 +238,7 @@ class Skribify():
     def write_to_json(self):
         now = datetime.datetime.now()
         now_str = now.strftime('%Y-%m-%d_%H-%M-%S')
-        directory = 'data'
+        directory = 'output'
         json_file = f'{directory}/{self.of}_{now_str}.json'
 
         with open(json_file, 'w') as f:
