@@ -47,8 +47,8 @@ Skribify is a powerful transcription and summarization tool that leverages the p
 
 
 ## **Usage**
-### Important
-Skribify only allows videos up to 25MB's of size, if your Skribify fails, try with a smaller video.
+## Important
+Larger videos may not work with GPT 3.5, and you may need access to GPT-4 for larger transcriptions. 
 ### **Command Line Interface**
 Skribify can be used from the command line by providing the required arguments:
 
