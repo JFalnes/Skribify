@@ -12,7 +12,7 @@ from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import subprocess
 
-__version__ = '0.1.3'
+__version__ = '0.1.5'
 
 if not os.path.exists('logs/'):
     os.makedirs('logs/')
@@ -34,22 +34,22 @@ default_prompt = '''Summarize the following text in 4 sentences: '''
 
 def is_ffmpeg_installed():
     try:
-        subprocess.run(["ffmpeg", "-version"], check=True)
+        subprocess.run(['ffmpeg', '-version'], check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
 if not is_ffmpeg_installed():
-    raise SystemExit("ffmpeg is not installed on this system")
+    raise SystemExit('\nffmpeg is not installed on this system\n')
 
 def convert_to_wav(file_path):
     output_path = os.path.splitext(file_path)[0] + '.wav'
-    subprocess.run(["ffmpeg", "-i", file_path, output_path])
+    subprocess.run(['ffmpeg', '-i', file_path, output_path])
     return output_path
 
 
 class Downloader:
-    def __init__(self, url, downloads_folder="downloads"):
+    def __init__(self, url, downloads_folder='downloads'):
         self.url = url
         self.downloads_folder = downloads_folder
 
@@ -86,33 +86,36 @@ class Transcriber:
     async def transcribe(self):
         try:
             total_transcript = ''
-            wav_file_path = convert_to_wav(self.file_path)
+            
+            loop = asyncio.get_event_loop()
+            audio = await loop.run_in_executor(None, AudioSegment.from_file, self.file_path)
 
-            audio = AudioSegment.from_wav(wav_file_path)
+            chunk_duration_ms = 2 * 60 * 1000
 
-            chunk_duration_ms = 3 * 60 * 1000 
             chunks = self.split_by_duration(audio, chunk_duration_ms)
 
-            logging.info(f"\nNumber of chunks created: {len(chunks)}\n")
+            file_size_MB = os.path.getsize(self.file_path) / (1024 * 1024)
+            logging.info(f'\nNumber of chunks created: {len(chunks)}. File size: {file_size_MB:.2f} MB\n')
 
             for i, chunk in enumerate(chunks):
-                chunk_file = f"chunk{i}.wav"
-                chunk.export(chunk_file, format="wav")
+                chunk_file = f'chunk{i}.{self.file_path.split(".")[-1]}'
+                await loop.run_in_executor(None, chunk.export, chunk_file, self.file_path.split(".")[-1])
 
                 with open(chunk_file, 'rb') as audio_file:
-                    transcript_obj = openai.Audio.transcribe('whisper-1', audio_file)
+                    transcript_obj = await loop.run_in_executor(None, openai.Audio.transcribe, 'whisper-1', audio_file)
                     total_transcript += transcript_obj['text'] + ' '
 
                 os.remove(chunk_file)
                 if os.path.exists(chunk_file):
-                    logging.error(f"\nFile {chunk_file} was not deleted.\n")
+                    logging.error(f'\nFile {chunk_file} was not deleted.\n')
                 else:
-                    logging.info(f"\nFile {chunk_file} was deleted successfully.\n")
+                    logging.info(f'\nFile {chunk_file} was deleted successfully.\n')
             return total_transcript.strip()
 
         except Exception as e:
-            logging.error(f'\nTranscription failed! {e}\n')
+            logging.error(f'\nTranscription failed! {e}.')
             raise e
+
         
 class Summarizer:
     def __init__(self, transcript, prompt, model):
@@ -169,8 +172,9 @@ class Skribify():
         self.of = of
         self.loop = asyncio.get_event_loop()
         self.transcription_done = threading.Event()
-
         self.data_dict = {}
+
+
         def set_api_key_env(api_key):
             script_dir = os.path.dirname(os.path.abspath(__file__))
             env_path = os.path.join(script_dir, '.env')
@@ -194,6 +198,7 @@ class Skribify():
         '''
         Run the transcription process based on the provided input (URL or file).
         '''
+        print(self.model)
         if self.url_entry and not self.file_entry:
             self.data_dict['url'] = self.url_entry
             return self.loop.create_task(self.transcribe_from_url(self.url_entry))
@@ -205,7 +210,19 @@ class Skribify():
             logging.error('\nError: Please provide either a URL or a file path, not both.\n')
         else:
             logging.error('\nError: Please provide either a URL or a file path.\n')
-    
+
+
+    async def transcribe_from_url(self, url):
+        downloader = Downloader(url)
+        downloaded_file_path = await downloader.download()
+        
+        if downloaded_file_path is not None:
+            await self.transcribe_from_file(downloaded_file_path)
+        else:
+            logging.error('Download failed. Could not transcribe from URL.')
+        
+
+
     async def transcribe_from_file(self, file_path):
         transcriber = Transcriber(file_path)
         transcript = await transcriber.transcribe()
@@ -219,6 +236,7 @@ class Skribify():
                 print(transcript)
             else:
                 await self.summarize(transcript)
+
 
     async def summarize(self, transcript):
         summarizer = Summarizer(transcript, self.prompt, self.model)

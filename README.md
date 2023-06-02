@@ -16,12 +16,12 @@ Skribify is a powerful transcription and summarization tool that leverages the p
 * Detailed logging for debugging and tracking progress.
   
 ## <u>Installation</u>
-1. Clone this repository:
+1. **Clone this repository:**
     ```bash
     git clone https://github.com/jfalnes/Skribify.git
     ```
 
-2. Install the required dependencies:
+2. **Install the required dependencies:**
 
     ```bash
     pip install -r requirements.txt
@@ -30,7 +30,7 @@ Skribify is a powerful transcription and summarization tool that leverages the p
     ```bash
     pip install git+https://github.com/jfalnes/Skribify.git
     ```
-3. Set up your OpenAI API key:
+3. **Set up your OpenAI API key:**
    * Skribify uses GPT4, if you do not have a GPT4 API key, you can request access to the beta [here](https://openai.com/waitlist/gpt-4-api).
      * If you don't have a key, there is an option to use GPT-3.5 instead. (Not recommended)
    * Obtain an OpenAI API key from OpenAI
@@ -39,16 +39,20 @@ Skribify is a powerful transcription and summarization tool that leverages the p
        ```makefile
        TOKEN=your_openai_api_key
        ```
-4. Set up your Google API key:
+4. **Set up your Google API key:**
    * Follow the prompt to open https://www.google.com/device in your web browser.
    * Enter the code provided by the script (e.g., "DBTH-BTYV") on the webpage and authenticate your account.
    *   Return to the terminal and press enter to continue the script.
 
-
+5. **Install FFMPEG:**
+   * Skribify requires FFMPEG for audio chunking to work. Ensure that FFMPEG is installed on your machine.
+   * You can download FFMPEG from the official website [here](https://www.ffmpeg.org/download.html) and follow the instructions to install based on your operating system.
+   * Confirm that FFMPEG is successfully installed by running the command `ffmpeg` in your terminal/cmd. If it's correctly installed, you should see a response with version information and a list of configurations.
 
 ## **Usage**
 ## Important
 Larger videos may not work with GPT 3.5, and you may need access to GPT-4 for larger transcriptions. 
+If you're using videos not downloaded via Skribify, it's recommended to extract and utilize only the MP3 audio from the video files. This is because Whisper API, which is responsible for transcription in Skribify, does not consider the context of the audio.
 ### **Command Line Interface**
 Skribify can be used from the command line by providing the required arguments:
 
@@ -56,7 +60,9 @@ Skribify can be used from the command line by providing the required arguments:
 * **`--file`, `-f`**: Path of the local video or audio file to transcribe and summarize.
 * **`--prompt`, `-p`**: Custom prompt for the summarization or path to a file containing the prompt (default: "Summarize the following text: ")
 * **`--transcribe`, `-t`**: Transcribe only the video or audio file, and make no changes.
-
+* **`--model`, `-`**: Specify model. Default GPT-4.
+* **`--version`, `-v`**: Check Skribify version.
+* **`--help`, `-h`**: Show help message and exit.
 ```bash
 python Skribify.py --url https://www.youtube.com/watch?v=your_video_id
 ```
