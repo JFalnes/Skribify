@@ -9,16 +9,14 @@ from pytube import YouTube
 import json
 import datetime
 from pydub import AudioSegment
-from pydub.silence import split_on_silence
-import subprocess
 import shutil
+import config
+
+config.setup()
 
 __version__ = '0.1.6'
 
-if not os.path.exists('logs/'):
-    os.makedirs('logs/')
-if not os.path.exists('output/'):
-    os.makedirs('output/')
+
 logging.basicConfig(filename='logs/log.log',
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -33,22 +31,6 @@ logging.getLogger('').addHandler(console)
 default_prompt = '''Summarize the following text in 4 sentences: '''
 
 
-def is_ffmpeg_installed():
-    try:
-        subprocess.run(['ffmpeg', '-version'], check=True)
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-
-if not is_ffmpeg_installed():
-    raise SystemExit('\nffmpeg is not installed on this system\n')
-
-def convert_to_wav(file_path):
-    output_path = os.path.splitext(file_path)[0] + '.wav'
-    subprocess.run(['ffmpeg', '-i', file_path, output_path])
-    return output_path
-
-
 class Downloader:
     def __init__(self, url, downloads_folder='downloads'):
         self.url = url
@@ -58,9 +40,11 @@ class Downloader:
         loop = asyncio.get_event_loop()
         youtube_object = YouTube(self.url, use_oauth=True, allow_oauth_cache=True)
         audio_stream = youtube_object.streams.filter().get_lowest_resolution()
+
         if not os.path.exists(self.downloads_folder):
             os.makedirs(self.downloads_folder)
         downloaded_file_path = os.path.join(self.downloads_folder, os.path.basename(audio_stream.default_filename))
+        
         if os.path.isfile(downloaded_file_path):
             return downloaded_file_path
         else:
@@ -76,6 +60,7 @@ class Transcriber:
     def __init__(self, file_path, chunks_folder='chunks'):
         self.file_path = file_path
         self.chunks_folder = chunks_folder
+
 
     def split_by_duration(self, audio_segment, chunk_duration_ms):
         chunks = []
@@ -110,7 +95,6 @@ class Transcriber:
                     transcript_obj = await loop.run_in_executor(None, openai.Audio.transcribe, 'whisper-1', audio_file)
                     total_transcript += transcript_obj['text'] + ' '
 
-            # Now we remove the entire chunks folder
             shutil.rmtree(self.chunks_folder, ignore_errors=True)
             if os.path.exists(self.chunks_folder):
                 logging.error(f'\nDirectory {self.chunks_folder} was not deleted.\n')
@@ -180,28 +164,7 @@ class Skribify():
         self.transcription_done = threading.Event()
         self.data_dict = {}
 
-
-
-    def set_api_key_env(api_key):
-        project_dir = os.getcwd()  # Get the project directory
-        env_path = os.path.join(project_dir, '.env')
-        os.environ['TOKEN'] = api_key
-
-        with open(env_path, 'w') as f:
-            f.write(f'TOKEN={api_key}')
-
-    from dotenv import load_dotenv
-
-    load_dotenv()  
-
-    api_key = os.environ.get('TOKEN')
-    if api_key is None:
-        api_key = input('\nPlease enter your OpenAI API Key: ')
-        set_api_key_env(api_key)
-        os.environ['TOKEN'] = api_key
-
-    openai.api_key = api_key
-
+        openai.api_key = os.getenv('OPENAI_API_KEY') 
 
 
     def run(self):
