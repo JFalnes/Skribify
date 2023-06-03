@@ -1,4 +1,4 @@
-# SKRIBIFY 0.1.4
+# SKRIBIFY 0.1.6
 Skribify is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-3.5 or GPT4 and WhisperAI to generate concise summaries from video or audio content. With support for both local files and YouTube videos, Skribify makes it easy to extract valuable insights from your media files.
 
 ## **Table of Contents**
@@ -84,13 +84,13 @@ You can also use Skribify in your Python script as follows:
 from Skribify import Skribify
 
 def handle_transcription(transcription):
-    print(transcription)
+    # Logic to handle the transcription
 
 url = "https://www.youtube.com/watch?v=your_video_id"
 prompt = "Summarize the following text: "
 
 with Skribify(callback=handle_transcription, prompt=prompt, url_entry=url) as skribify:
-    pass
+        skribify.loop.run_until_complete(skribify.run())
 ```
 ## **Example Output**
 ### **Input**
@@ -105,8 +105,6 @@ py .\Skribify.py --url https://www.youtube.com/watch?v=jNQXAC9IVRw --prompt 'Sum
 ```
 The text discusses elephants and highlights their impressively long fronts as a cool feature.
 ```
-## **Planned Features**
-* Support for files over 25MB
 
 ## **Contributing**
 We welcome contributions! Please feel free to submit a pull request for new features, bug fixes, or improvements.

@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import threading
-from dotenv import load_dotenv
 import openai
 from openai import InvalidRequestError
 from pytube import YouTube
@@ -10,9 +9,14 @@ import json
 import datetime
 from pydub import AudioSegment
 import shutil
-import config
 
-config.setup()
+try:
+    from .config import setup as config_setup
+except ImportError:
+    from config import setup as config_setup
+
+
+config_setup()
 
 __version__ = '0.1.6'
 

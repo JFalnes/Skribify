@@ -1,13 +1,11 @@
 import os
 from dotenv import load_dotenv
-import openai
 import subprocess
 
 
 def set_api_key_env(api_key):
     project_dir = os.getcwd() 
     env_path = os.path.join(project_dir, '.env')
-    openai.api_key = api_key
 
     with open(env_path, 'w') as f:
         f.write(f'OPENAI_API_KEY={api_key}')
