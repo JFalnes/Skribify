@@ -11,6 +11,7 @@ import datetime
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import subprocess
+import shutil
 
 __version__ = '0.1.6'
 
@@ -72,8 +73,9 @@ class Downloader:
 
 
 class Transcriber:
-    def __init__(self, file_path):
+    def __init__(self, file_path, chunks_folder='chunks'):
         self.file_path = file_path
+        self.chunks_folder = chunks_folder
 
     def split_by_duration(self, audio_segment, chunk_duration_ms):
         chunks = []
@@ -97,19 +99,23 @@ class Transcriber:
             file_size_MB = os.path.getsize(self.file_path) / (1024 * 1024)
             logging.info(f'\nNumber of chunks created: {len(chunks)}. File size: {file_size_MB:.2f} MB\n')
 
+            if not os.path.exists(self.chunks_folder):
+                os.makedirs(self.chunks_folder)
+
             for i, chunk in enumerate(chunks):
-                chunk_file = f'chunk{i}.{self.file_path.split(".")[-1]}'
+                chunk_file = os.path.join(self.chunks_folder, f'chunk{i}.{self.file_path.split(".")[-1]}')
                 await loop.run_in_executor(None, chunk.export, chunk_file, self.file_path.split(".")[-1])
 
                 with open(chunk_file, 'rb') as audio_file:
                     transcript_obj = await loop.run_in_executor(None, openai.Audio.transcribe, 'whisper-1', audio_file)
                     total_transcript += transcript_obj['text'] + ' '
 
-                os.remove(chunk_file)
-                if os.path.exists(chunk_file):
-                    logging.error(f'\nFile {chunk_file} was not deleted.\n')
-                else:
-                    logging.info(f'\nFile {chunk_file} was deleted successfully.\n')
+            # Now we remove the entire chunks folder
+            shutil.rmtree(self.chunks_folder, ignore_errors=True)
+            if os.path.exists(self.chunks_folder):
+                logging.error(f'\nDirectory {self.chunks_folder} was not deleted.\n')
+            else:
+                logging.info(f'\nDirectory {self.chunks_folder} was deleted successfully.\n')
             return total_transcript.strip()
 
         except Exception as e:
