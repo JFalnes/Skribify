@@ -12,7 +12,7 @@ from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import subprocess
 
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 
 if not os.path.exists('logs/'):
     os.makedirs('logs/')
@@ -175,23 +175,27 @@ class Skribify():
         self.data_dict = {}
 
 
-        def set_api_key_env(api_key):
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            env_path = os.path.join(script_dir, '.env')
-            os.environ['TOKEN'] = api_key
 
-            with open(env_path, 'w') as f:
-                f.write(f'TOKEN={api_key}')
+    def set_api_key_env(api_key):
+        project_dir = os.getcwd()  # Get the project directory
+        env_path = os.path.join(project_dir, '.env')
+        os.environ['TOKEN'] = api_key
 
-        load_dotenv()  
+        with open(env_path, 'w') as f:
+            f.write(f'TOKEN={api_key}')
 
-        api_key = os.environ.get('TOKEN')
-        if api_key is None:
-            api_key = input('\nPlease enter your OpenAI API Key: ')
-            set_api_key_env(api_key)
-            os.environ['TOKEN'] = api_key
+    from dotenv import load_dotenv
 
-        openai.api_key = api_key
+    load_dotenv()  
+
+    api_key = os.environ.get('TOKEN')
+    if api_key is None:
+        api_key = input('\nPlease enter your OpenAI API Key: ')
+        set_api_key_env(api_key)
+        os.environ['TOKEN'] = api_key
+
+    openai.api_key = api_key
+
 
 
     def run(self):
@@ -220,7 +224,6 @@ class Skribify():
             await self.transcribe_from_file(downloaded_file_path)
         else:
             logging.error('Download failed. Could not transcribe from URL.')
-        
 
 
     async def transcribe_from_file(self, file_path):
@@ -253,6 +256,7 @@ class Skribify():
             else:
                 self.callback(content)
 
+
     def write_to_json(self):
         now = datetime.datetime.now()
         now_str = now.strftime('%Y-%m-%d_%H-%M-%S')
@@ -267,6 +271,7 @@ class Skribify():
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         return self
+
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.loop.close()
