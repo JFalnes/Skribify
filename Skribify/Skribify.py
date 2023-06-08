@@ -4,7 +4,6 @@ import os
 import threading
 import openai
 from openai import InvalidRequestError
-from pytube import YouTube
 import json
 import datetime
 from pydub import AudioSegment
@@ -15,17 +14,16 @@ try:
 except ImportError:
     from config import setup as config_setup
 
-
 config_setup()
 
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 
 
 logging.basicConfig(filename='logs/log.log',
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 
 console = logging.StreamHandler()
 
@@ -33,31 +31,6 @@ logging.getLogger('').addHandler(console)
 
 # Default prompt for the transcription
 default_prompt = '''Summarize the following text in 4 sentences: '''
-
-
-class Downloader:
-    def __init__(self, url, downloads_folder='downloads'):
-        self.url = url
-        self.downloads_folder = downloads_folder
-
-    async def download(self):
-        loop = asyncio.get_event_loop()
-        youtube_object = YouTube(self.url, use_oauth=True, allow_oauth_cache=True)
-        audio_stream = youtube_object.streams.filter().get_lowest_resolution()
-
-        if not os.path.exists(self.downloads_folder):
-            os.makedirs(self.downloads_folder)
-        downloaded_file_path = os.path.join(self.downloads_folder, os.path.basename(audio_stream.default_filename))
-        
-        if os.path.isfile(downloaded_file_path):
-            return downloaded_file_path
-        else:
-            try:
-                downloaded_file_path = await loop.run_in_executor(None, lambda: audio_stream.download(self.downloads_folder))
-                return downloaded_file_path
-            except Exception as e:
-                logging.error(f'\nDownload failed! {e}')
-                return None
 
 
 class Transcriber:
@@ -176,27 +149,12 @@ class Skribify():
         Run the transcription process based on the provided input (URL or file).
         '''
         print(self.model)
-        if self.url_entry and not self.file_entry:
-            self.data_dict['url'] = self.url_entry
-            return self.loop.create_task(self.transcribe_from_url(self.url_entry))
+
         
-        elif self.file_entry and not self.url_entry:
+        if self.file_entry and not self.url_entry:
             return self.transcribe_from_file(self.file_entry)
-        
-        elif self.url_entry and self.file_entry:
-            logging.error('\nError: Please provide either a URL or a file path, not both.\n')
         else:
-            logging.error('\nError: Please provide either a URL or a file path.\n')
-
-
-    async def transcribe_from_url(self, url):
-        downloader = Downloader(url)
-        downloaded_file_path = await downloader.download()
-        
-        if downloaded_file_path is not None:
-            await self.transcribe_from_file(downloaded_file_path)
-        else:
-            logging.error('Download failed. Could not transcribe from URL.')
+            logging.error('\nError: Please provide a valid file path.\n')
 
 
     async def transcribe_from_file(self, file_path):

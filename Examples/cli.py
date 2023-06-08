@@ -20,7 +20,6 @@ def read_prompt(prompt_str):
 def parse_command_line_arguments():
     parser = argparse.ArgumentParser(description='Skribify - A transcription and summarization tool')
 
-    parser.add_argument('-u', '--url', type=str, help='URL of the video to transcribe and summarize')
     parser.add_argument('-f', '--file', type=str, help='Path of the local file to transcribe and summarize')
     parser.add_argument('-p','--prompt', type=str, default='Summarize the following text: ', help='Custom prompt for the summarization or path to a file containing the prompt')
     parser.add_argument('-v', '--version', action='version', version=f'Skribify {__version__}')
@@ -42,16 +41,14 @@ def main():
     start_time = time.time()
     args = parse_command_line_arguments()
 
-    if args.url and args.file:
-        logging.error('Error: Please provide either a URL or a file path, not both.')
-        return
-    elif not args.url and not args.file:
-        logging.error('Error: Please provide either a URL or a file path.')
+
+    if not args.file:
+        logging.error('Error: Please provide a valid file path.')
         return
 
     prompt = read_prompt(args.prompt)
 
-    with Skribify(callback=handle_transcription, prompt=prompt, url_entry=args.url, file_entry=args.file, transcribe_only=args.transcribe, model=args.model) as skribify:
+    with Skribify(callback=handle_transcription, prompt=prompt, file_entry=args.file, transcribe_only=args.transcribe, model=args.model) as skribify:
         skribify.loop.run_until_complete(skribify.run())
 
         

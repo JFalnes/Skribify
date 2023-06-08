@@ -1,11 +1,10 @@
-# **Skribify v0.1.6**
 
-Skribify is a tool designed to transcribe and summarize video or audio content. The new v0.1.6 update brings several minor enhancements:
+# **Skribify v0.1.6 Release Notes**
 
-- Chunks are now moved to a designated directory, which is deleted after completion.
-- Configuration settings are now moved to `config.py` for improved readability.
-- The `.env` file is saved in the project root, not module root, when using Skribify as a package.
-- Changed how some imports work to improve readability and efficacy.
-  
-  
-Thanks for using Skribify!
+The latest release of Skribify, version 0.1.6, introduces several minor but crucial changes:
+
+* The Skribify YouTube Downloader has been removed, acknowledging it wasn't the best solution for our users.
+* File handling is now locally oriented. Users must upload files from their local storage.
+
+
+Stay updated for more advancements as we continue to improve Skribify.

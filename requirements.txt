@@ -1,5 +1,4 @@
 asyncio
 dotenv
 openai
-pytube
 pydub

@@ -1,5 +1,5 @@
-# SKRIBIFY 0.1.6
-Skribify is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-3.5 or GPT4 and WhisperAI to generate concise summaries from video or audio content. With support for both local files and YouTube videos, Skribify makes it easy to extract valuable insights from your media files.
+# SKRIBIFY 0.1.7
+Skribify is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-3.5 or GPT4 and WhisperAI to generate concise summaries from video or audio content. With support for local files, Skribify makes it easy to extract valuable insights from your media files.
 
 ## **Table of Contents**
 * <u>Features</u>
@@ -11,7 +11,7 @@ Skribify is a powerful transcription and summarization tool that leverages the p
 * <u>License</u>
 ## **Features**
 * Transcribe and summarize video or audio content.
-* Supports local files and YouTube videos.
+* Supports local files.
 * Customizable summarization prompts.
 * Detailed logging for debugging and tracking progress.
   
@@ -52,22 +52,16 @@ Skribify is a powerful transcription and summarization tool that leverages the p
 ## **Usage**
 ## Important
 Larger videos may not work with GPT 3.5, and you may need access to GPT-4 for larger transcriptions. 
-If you're using videos not downloaded via Skribify, it's recommended to extract and utilize only the MP3 audio from the video files. This is because Whisper API, which is responsible for transcription in Skribify, does not consider the context of the audio.
+If you're using files that exceed 25MB, they will be segmented into chunks and sequentially processed. This means that while it's possible to work with larger files, it is highly recommended to maintain a single file size under 25MB. This is because the Whisper API, responsible for transcription in Skribify, can process a smaller, singular file more effectively without the potential complications that can arise from chunked processing.
 ### **Command Line Interface**
 Skribify can be used from the command line by providing the required arguments:
 
-* **`--url`, `-u`**: URL of the YouTube video to transcribe and summarize.
 * **`--file`, `-f`**: Path of the local video or audio file to transcribe and summarize.
 * **`--prompt`, `-p`**: Custom prompt for the summarization or path to a file containing the prompt (default: "Summarize the following text: ")
 * **`--transcribe`, `-t`**: Transcribe only the video or audio file, and make no changes.
 * **`--model`, `-`**: Specify model. Default GPT-4.
 * **`--version`, `-v`**: Check Skribify version.
 * **`--help`, `-h`**: Show help message and exit.
-```bash
-python Skribify.py --url https://www.youtube.com/watch?v=your_video_id
-```
-
-or
 
 ```bash
 python Skribify.py --file path/to/your/video_or_audio_file
@@ -86,20 +80,16 @@ from Skribify import Skribify
 def handle_transcription(transcription):
     # Logic to handle the transcription
 
-url = "https://www.youtube.com/watch?v=your_video_id"
+file = "<local-file'
 prompt = "Summarize the following text: "
 
-with Skribify(callback=handle_transcription, prompt=prompt, url_entry=url) as skribify:
+with Skribify(callback=handle_transcription, prompt=prompt, ) as skribify:
         skribify.loop.run_until_complete(skribify.run())
 ```
-## **Example Output**
-### **Input**
-- URL: https://www.youtube.com/watch?v=jNQXAC9IVRw
-- Prompt: 'Summarize the following text'
 
 ### **Command used**:
 ```bash
-py .\Skribify.py --url https://www.youtube.com/watch?v=jNQXAC9IVRw --prompt 'Summarize the following text: '
+py .\Skribify.py --f '<local-file> --prompt 'Summarize the following text: ' -m 'gpt-3.5-turbo'
 ```
 ### **Output**:
 ```
