@@ -91,6 +91,7 @@ with Skribify(callback=handle_transcription, prompt=prompt, ) as skribify:
 ```bash
 py .\Skribify.py --f '<local-file> --prompt 'Summarize the following text: ' -m 'gpt-3.5-turbo'
 ```
+**Note**: Always enclose the `filename` in single quotes (`''`).
 ### **Output**:
 ```
 The text discusses elephants and highlights their impressively long fronts as a cool feature.
