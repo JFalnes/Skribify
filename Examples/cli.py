@@ -25,7 +25,8 @@ def parse_command_line_arguments():
     parser.add_argument('-v', '--version', action='version', version=f'Skribify {__version__}')
     parser.add_argument('-t', '--transcribe', action='store_true', help='Output only the transcribed text')
     parser.add_argument('-m', '--model', type=str, default='gpt-4', help='OpenAI model to use for summarization (default: gpt-4)')
-
+    parser.add_argument('-tts', '--text-to-speech', type=bool, default=False, help='Enable text-to-speech (default: False)')
+    
     return parser.parse_args()
 
 def format_transcription(transcription):

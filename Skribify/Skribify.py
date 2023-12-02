@@ -3,11 +3,13 @@ import logging
 import os
 import threading
 import openai
-from openai import InvalidRequestError
+# from openai import InvalidRequestError
 import json
 import datetime
 from pydub import AudioSegment
 import shutil
+from openai import OpenAI
+from pathlib import Path
 
 try:
     from .config import setup as config_setup
@@ -16,7 +18,7 @@ except ImportError:
 
 config_setup()
 
-__version__ = '0.1.7'
+__version__ = '0.1.8'
 
 
 logging.basicConfig(filename='logs/log.log',
@@ -118,7 +120,7 @@ class Skribify():
     '''
     A class used to transcribe and summarize video or audio content.
     '''
-    def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4', of='output'):
+    def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4-1106-preview', of='output'):
         '''
         Initialize Skribify instance.
         
