@@ -3,11 +3,12 @@ import logging
 import os
 import threading
 import openai
-from openai import InvalidRequestError
 import json
 import datetime
 from pydub import AudioSegment
 import shutil
+from openai import OpenAI
+from pathlib import Path
 
 try:
     from .config import setup as config_setup
@@ -16,7 +17,9 @@ except ImportError:
 
 config_setup()
 
-__version__ = '0.1.7'
+client = OpenAI()
+
+__version__ = '0.1.8'
 
 
 logging.basicConfig(filename='logs/log.log',
@@ -69,8 +72,9 @@ class Transcriber:
                 await loop.run_in_executor(None, chunk.export, chunk_file, self.file_path.split(".")[-1])
 
                 with open(chunk_file, 'rb') as audio_file:
-                    transcript_obj = await loop.run_in_executor(None, openai.Audio.transcribe, 'whisper-1', audio_file)
-                    total_transcript += transcript_obj['text'] + ' '
+                    # Use lambda to ensure only one argument (the dictionary) is passed
+                    transcript_obj = await loop.run_in_executor(None, lambda: client.audio.transcriptions.create(model='whisper-1', file=audio_file))
+                    total_transcript += transcript_obj.text + ' '
 
             shutil.rmtree(self.chunks_folder, ignore_errors=True)
             if os.path.exists(self.chunks_folder):
@@ -93,15 +97,16 @@ class Summarizer:
     async def summarize(self):
         try:
             loop = asyncio.get_event_loop()
-            completion = await loop.run_in_executor(None, lambda: openai.ChatCompletion.create(
+            completion = await loop.run_in_executor(None, lambda: client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {'role': 'user', 'content': f'{self.prompt}:{self.transcript}'}
+                messages=[   
+                    {"role": "system", "content": self.prompt},
+                    {'role': 'user', 'content': self.transcript}
                 ]
             ))
 
             return completion
-        except InvalidRequestError as e:
+        except BaseException as e: # change this once i know what to expect
             if 'context_length_exceeded' in str(e):
                 logging.error(f'\nThe provided transcript is too long for the model. '
                               f'The maximum context length is 4096 tokens, but the transcript '
@@ -118,7 +123,7 @@ class Skribify():
     '''
     A class used to transcribe and summarize video or audio content.
     '''
-    def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4', of='output'):
+    def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4-1106-preview', of='output'):
         '''
         Initialize Skribify instance.
         
@@ -140,8 +145,6 @@ class Skribify():
         self.loop = asyncio.get_event_loop()
         self.transcription_done = threading.Event()
         self.data_dict = {}
-
-        openai.api_key = os.getenv('OPENAI_API_KEY') 
 
 
     def run(self):
@@ -177,11 +180,13 @@ class Skribify():
         summary = await summarizer.summarize()
         if summary is not None:
             self.data_dict['prompt'] = self.prompt
-            self.data_dict['summary'] = summary
+
+            # Extract only the serializable content from the summary
+            content = summary.choices[0].message.content
+            self.data_dict['summary'] = content  # Store only the content string
 
             self.write_to_json()
 
-            content = summary['choices'][0]['message']['content']
             if self.flask:
                 await self.callback(content)
             else:
