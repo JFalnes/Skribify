@@ -1,4 +1,4 @@
-# SKRIBIFY 0.1.7
+# SKRIBIFY 0.1.8
 Skribify is a powerful transcription and summarization tool that leverages the power of OpenAI's GPT-3.5 or GPT4 and WhisperAI to generate concise summaries from video or audio content. With support for local files, Skribify makes it easy to extract valuable insights from your media files.
 
 ## **Table of Contents**
