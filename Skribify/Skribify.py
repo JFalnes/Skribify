@@ -19,7 +19,7 @@ config_setup()
 
 client = OpenAI()
 
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 
 
 logging.basicConfig(filename='logs/log.log',
@@ -33,8 +33,9 @@ console = logging.StreamHandler()
 logging.getLogger('').addHandler(console)
 
 # Default prompt for the transcription
-default_prompt = '''Summarize the following text in 4 sentences: '''
-
+default_prompt = 'Summarize the following video in two sentences:'
+with open('Skribify\prompt.txt', 'r') as prompt_file:
+    system_prompt = prompt_file.read().strip()
 
 class Transcriber:
     def __init__(self, file_path, chunks_folder='chunks'):
@@ -89,19 +90,21 @@ class Transcriber:
 
         
 class Summarizer:
-    def __init__(self, transcript, prompt, model):
-        self.transcript = transcript
+    def __init__(self, transcript, prompt, system, model):
+        self.transcript = transcript + "\nUser Instructions: "  
         self.prompt = prompt
         self.model = model
-
+        self.system = system
+        print(f'PROMPT:{self.system},{self.transcript}, {self.prompt}')
     async def summarize(self):
         try:
             loop = asyncio.get_event_loop()
             completion = await loop.run_in_executor(None, lambda: client.chat.completions.create(
                 model=self.model,
                 messages=[   
-                    {"role": "system", "content": self.prompt},
-                    {'role': 'user', 'content': self.transcript}
+                    {"role": "system", "content": {self.system}},  # system instructions first
+                    {'role': 'user', 'content': self.transcript},  # then the transcript
+                    {'role': 'user', 'content': self.prompt}  # and finally the user prompt
                 ]
             ))
 
@@ -123,7 +126,7 @@ class Skribify():
     '''
     A class used to transcribe and summarize video or audio content.
     '''
-    def __init__(self, callback, prompt=default_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4-1106-preview', of='output'):
+    def __init__(self, callback, prompt=default_prompt, system=system_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4-1106-preview', of='output'):
         '''
         Initialize Skribify instance.
         
@@ -137,6 +140,7 @@ class Skribify():
         self.url_entry = url_entry
         self.file_entry = file_entry
         self.prompt = prompt
+        self.system = system_prompt
         self.callback = callback
         self.transcribe_only = transcribe_only
         self.flask = flask
@@ -151,7 +155,7 @@ class Skribify():
         '''
         Run the transcription process based on the provided input (URL or file).
         '''
-        print(self.model)
+        logging.info(self.model)
 
         
         if self.file_entry and not self.url_entry:
@@ -176,7 +180,7 @@ class Skribify():
 
 
     async def summarize(self, transcript):
-        summarizer = Summarizer(transcript, self.prompt, self.model)
+        summarizer = Summarizer(transcript, self.prompt, self.system, self.model)
         summary = await summarizer.summarize()
         if summary is not None:
             self.data_dict['prompt'] = self.prompt

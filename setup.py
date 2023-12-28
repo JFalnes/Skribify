@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="Skribify",
-    version="0.1.8",
+    version="0.1.9",
     author="JFalnes",
     author_email="post@falnes.dev",
     description="A transcription and summarization tool",
