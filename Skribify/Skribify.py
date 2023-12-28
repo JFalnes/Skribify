@@ -33,24 +33,25 @@ console = logging.StreamHandler()
 logging.getLogger('').addHandler(console)
 
 # Default prompt for the transcription
+DEFAULT_PROMPT = 'Summarize the following video in two sentences:'
+CHUNK_DURATION_MS = 2 * 60 * 1000  # 2 minutes
+TEMP_CHUNKS_DIR = "chunks"
+TRANSCRIPTION_MODEL = 'whisper-1'
 
-default_prompt = 'Summarize the following video in two sentences:'
-
-with open('Skribify\prompt.txt', 'r') as prompt_file:
-    system_prompt = prompt_file.read().strip()
+with open(Path('Skribify/prompt.txt'), 'r') as prompt_file:
+    SYSTEM_PROMPT = prompt_file.read().strip()
 
 class Transcriber:
-    def __init__(self, file_path, chunks_folder='chunks'):
+    def __init__(self, file_path, chunks_folder=TEMP_CHUNKS_DIR):
         self.file_path = file_path
         self.chunks_folder = chunks_folder
         self.loop = asyncio.get_event_loop()  # Get the event loop and store it
 
-
-    def split_by_duration(self, audio_segment, chunk_duration_ms):
+    def split_by_duration(self, audio_segment, CHUNK_DURATION_MS):
         chunks = []
-        while len(audio_segment) > chunk_duration_ms:
-            chunks.append(audio_segment[:chunk_duration_ms])
-            audio_segment = audio_segment[chunk_duration_ms:]
+        while len(audio_segment) > CHUNK_DURATION_MS:
+            chunks.append(audio_segment[:CHUNK_DURATION_MS])
+            audio_segment = audio_segment[CHUNK_DURATION_MS:]
         chunks.append(audio_segment)
         return chunks
 
@@ -61,7 +62,7 @@ class Transcriber:
             chunk.export(chunk_file, format=self.file_path.split(".")[-1])
 
             with open(chunk_file, 'rb') as audio_file:
-                transcript_obj = await self.loop.run_in_executor(None, lambda: client.audio.transcriptions.create(model='whisper-1', file=audio_file))
+                transcript_obj = await self.loop.run_in_executor(None, lambda: client.audio.transcriptions.create(model=TRANSCRIPTION_MODEL, file=audio_file))
             return transcript_obj.text
 
         except Exception as e:
@@ -92,8 +93,8 @@ class Summarizer:
     def __init__(self, transcript, prompt, system, model):
         self.transcript = transcript + "\nUser Instructions: "  
         self.prompt = prompt
-        self.model = model
         self.system = system
+        self.model = model
 
     async def summarize(self):
         try:
@@ -116,21 +117,18 @@ class Summarizer:
             else:
                 logging.error(f'\nError during completion: {e}\n')
             return None
-        except Exception as e:
-            logging.error(f'\nAn unexpected error occurred during completion: {e}\n')
-            return None
         
 
 class Skribify():
     '''
     A class used to transcribe and summarize video or audio content.
     '''
-    def __init__(self, callback, prompt=default_prompt, system=system_prompt, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4-1106-preview', of='output'):
+    def __init__(self, callback, prompt=DEFAULT_PROMPT, system=SYSTEM_PROMPT, url_entry=None, file_entry=None, transcribe_only=False, flask=False, model='gpt-4-1106-preview', of='output'):
         '''
         Initialize Skribify instance.
         
         :param callback: Function to call with the transcription result
-        :param prompt: Prompt to be used for summarizing the transcription (default: default_prompt)
+        :param prompt: Prompt to be used for summarizing the transcription (default: DEFAULT_PROMPT)
         :param url_entry: URL to download video or audio content (default: None)
         :param file_entry: Local file path of video or audio content (default: None)
         :param flask: Whether or not to run the transcription process in a Flask app (default: False)
@@ -155,13 +153,11 @@ class Skribify():
         Run the transcription process based on the provided input (URL or file).
         '''
         logging.info(self.model)
-
-        
+ 
         if self.file_entry and not self.url_entry:
             return self.transcribe_from_file(self.file_entry)
         else:
             logging.error('\nError: Please provide a valid file path.\n')
-
 
     async def transcribe_from_file(self, file_path):
         transcriber = Transcriber(file_path)
@@ -176,7 +172,6 @@ class Skribify():
                 print(transcript)
             else:
                 await self.summarize(transcript)
-
 
     async def summarize(self, transcript):
         summarizer = Summarizer(transcript, self.prompt, self.system, self.model)
@@ -195,7 +190,6 @@ class Skribify():
             else:
                 self.callback(content)
 
-
     def write_to_json(self):
         now = datetime.datetime.now()
         now_str = now.strftime('%Y-%m-%d_%H-%M-%S')
@@ -205,12 +199,10 @@ class Skribify():
         with open(json_file, 'w') as f:
             json.dump(self.data_dict, f, indent=4)
 
-
     def __enter__(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         return self
-
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.loop.close()
