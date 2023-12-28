@@ -102,7 +102,7 @@ class Summarizer:
             completion = await loop.run_in_executor(None, lambda: client.chat.completions.create(
                 model=self.model,
                 messages=[   
-                    {"role": "system", "content": {self.system}},  # system instructions first
+                    {"role": "system", "content": self.system},  # system instructions first
                     {'role': 'user', 'content': self.transcript},  # then the transcript
                     {'role': 'user', 'content': self.prompt}  # and finally the user prompt
                 ]
@@ -140,7 +140,7 @@ class Skribify():
         self.url_entry = url_entry
         self.file_entry = file_entry
         self.prompt = prompt
-        self.system = system_prompt
+        self.system = system
         self.callback = callback
         self.transcribe_only = transcribe_only
         self.flask = flask
