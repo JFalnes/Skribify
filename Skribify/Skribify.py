@@ -19,7 +19,7 @@ config_setup()
 
 client = OpenAI()
 
-__version__ = '0.1.9'
+__version__ = '0.2'
 
 
 logging.basicConfig(filename='logs/log.log',
@@ -33,7 +33,9 @@ console = logging.StreamHandler()
 logging.getLogger('').addHandler(console)
 
 # Default prompt for the transcription
+
 default_prompt = 'Summarize the following video in two sentences:'
+
 with open('Skribify\prompt.txt', 'r') as prompt_file:
     system_prompt = prompt_file.read().strip()
 
@@ -41,6 +43,7 @@ class Transcriber:
     def __init__(self, file_path, chunks_folder='chunks'):
         self.file_path = file_path
         self.chunks_folder = chunks_folder
+        self.loop = asyncio.get_event_loop()  # Get the event loop and store it
 
 
     def split_by_duration(self, audio_segment, chunk_duration_ms):
@@ -51,42 +54,38 @@ class Transcriber:
         chunks.append(audio_segment)
         return chunks
 
-    async def transcribe(self):
+    async def transcribe_chunk(self, chunk, chunk_index):
+        """Asynchronously transcribe a single chunk."""
         try:
-            total_transcript = ''
-            
-            loop = asyncio.get_event_loop()
-            audio = await loop.run_in_executor(None, AudioSegment.from_file, self.file_path)
+            chunk_file = os.path.join(self.chunks_folder, f'chunk{chunk_index}.{self.file_path.split(".")[-1]}')
+            chunk.export(chunk_file, format=self.file_path.split(".")[-1])
 
-            chunk_duration_ms = 2 * 60 * 1000
-
-            chunks = self.split_by_duration(audio, chunk_duration_ms)
-
-            file_size_MB = os.path.getsize(self.file_path) / (1024 * 1024)
-            logging.info(f'\nNumber of chunks created: {len(chunks)}. File size: {file_size_MB:.2f} MB\n')
-
-            if not os.path.exists(self.chunks_folder):
-                os.makedirs(self.chunks_folder)
-
-            for i, chunk in enumerate(chunks):
-                chunk_file = os.path.join(self.chunks_folder, f'chunk{i}.{self.file_path.split(".")[-1]}')
-                await loop.run_in_executor(None, chunk.export, chunk_file, self.file_path.split(".")[-1])
-
-                with open(chunk_file, 'rb') as audio_file:
-                    # Use lambda to ensure only one argument (the dictionary) is passed
-                    transcript_obj = await loop.run_in_executor(None, lambda: client.audio.transcriptions.create(model='whisper-1', file=audio_file))
-                    total_transcript += transcript_obj.text + ' '
-
-            shutil.rmtree(self.chunks_folder, ignore_errors=True)
-            if os.path.exists(self.chunks_folder):
-                logging.error(f'\nDirectory {self.chunks_folder} was not deleted.\n')
-            else:
-                logging.info(f'\nDirectory {self.chunks_folder} was deleted successfully.\n')
-            return total_transcript.strip()
+            with open(chunk_file, 'rb') as audio_file:
+                transcript_obj = await self.loop.run_in_executor(None, lambda: client.audio.transcriptions.create(model='whisper-1', file=audio_file))
+            return transcript_obj.text
 
         except Exception as e:
-            logging.error(f'\nTranscription failed! {e}.')
-            raise e
+            logging.error(f'\nTranscription of chunk {chunk_index} failed: {e}')
+            return ''
+
+    async def transcribe(self):
+        total_transcript = ''
+        
+        audio = await self.loop.run_in_executor(None, AudioSegment.from_file, self.file_path)
+
+        chunk_duration_ms = 2 * 60 * 1000
+        chunks = self.split_by_duration(audio, chunk_duration_ms)
+
+        if not os.path.exists(self.chunks_folder):
+            os.makedirs(self.chunks_folder)
+
+        # Create a coroutine for each chunk and gather them to run concurrently.
+        transcribe_tasks = [self.transcribe_chunk(chunk, i) for i, chunk in enumerate(chunks)]
+        transcripts = await asyncio.gather(*transcribe_tasks)
+
+        shutil.rmtree(self.chunks_folder, ignore_errors=True)
+
+        return ' '.join(transcripts).strip()
 
         
 class Summarizer:
@@ -95,7 +94,7 @@ class Summarizer:
         self.prompt = prompt
         self.model = model
         self.system = system
-        print(f'PROMPT:{self.system},{self.transcript}, {self.prompt}')
+
     async def summarize(self):
         try:
             loop = asyncio.get_event_loop()
