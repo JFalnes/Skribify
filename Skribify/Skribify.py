@@ -10,6 +10,7 @@ import shutil
 from openai import OpenAI
 from pathlib import Path
 import pkg_resources
+import time
 
 try:
     from .config import setup as config_setup
@@ -73,12 +74,14 @@ class Transcriber:
             return ''
 
     async def transcribe(self):
+        start_time = time.time()  # Start time for transcription
         total_transcript = ''
-        
         audio = await self.loop.run_in_executor(None, AudioSegment.from_file, self.file_path)
 
+        duration = len(audio) / 1000  # Duration in seconds
         chunk_duration_ms = 2 * 60 * 1000
         chunks = self.split_by_duration(audio, chunk_duration_ms)
+        chunks_count = len(chunks)  # Number of chunks
 
         if not os.path.exists(self.chunks_folder):
             os.makedirs(self.chunks_folder)
@@ -89,12 +92,15 @@ class Transcriber:
 
         shutil.rmtree(self.chunks_folder, ignore_errors=True)
 
-        return ' '.join(transcripts).strip()
+        transcription_time = time.time() - start_time  # Time taken for transcription
+        return {'transcript': ' '.join(transcripts).strip(), 'duration': duration, 'chunks_count': chunks_count, 'transcription_time': transcription_time}
 
         
 class Summarizer:
     def __init__(self, transcript, prompt, system, model):
-        self.transcript = transcript + "\nUser Instructions: "  
+        # Store the user instructions separately.
+        self.user_instructions = "\nUser Instructions: "  
+        self.transcript = transcript  # Keep the actual transcript clean.
         self.prompt = prompt
         self.system = system
         self.model = model
@@ -102,12 +108,14 @@ class Summarizer:
     async def summarize(self):
         try:
             loop = asyncio.get_event_loop()
+            # Pass the user instructions along with the transcript to the model.
+            # But do not include it in the output directly.
             completion = await loop.run_in_executor(None, lambda: client.chat.completions.create(
                 model=self.model,
                 messages=[   
-                    {"role": "system", "content": self.system},  # system instructions first
-                    {'role': 'user', 'content': self.transcript},  # then the transcript
-                    {'role': 'user', 'content': self.prompt}  # and finally the user prompt
+                    {"role": "system", "content": self.system},
+                    {'role': 'user', 'content': self.transcript + self.user_instructions},
+                    {'role': 'user', 'content': self.prompt}
                 ]
             ))
 
@@ -151,56 +159,58 @@ class Skribify():
         self.data_dict = {}
 
 
-    def run(self):
-        '''
-        Run the transcription process based on the provided input (URL or file).
-        '''
-        logging.info(self.model)
- 
-        if self.file_entry and not self.url_entry:
-            return self.transcribe_from_file(self.file_entry)
-        else:
-            logging.error('\nError: Please provide a valid file path.\n')
-
     async def transcribe_from_file(self, file_path):
-        transcriber = Transcriber(file_path)
-        transcript = await transcriber.transcribe()
-        if transcript is not None:
-            self.data_dict['file'] = file_path
-            self.data_dict['transcript'] = transcript
+        transcriber = Transcriber(file_path)  # This line was missing or incorrectly placed
+        transcribe_result = await transcriber.transcribe()  # Now 'transcriber' is defined
+        transcript = transcribe_result['transcript']
+        file_size_bytes = os.path.getsize(file_path)  # Get the file size in bytes
+        file_size_kb = file_size_bytes / 1024
+        response = {
+            "file": file_path,
+            "transcript": transcript,
+            "summary": None,
+            "duration": transcribe_result['duration'],
+            "chunks_count": transcribe_result['chunks_count'],
+            "transcription_time": transcribe_result['transcription_time'],
+            "file_size_kb": file_size_kb, 
+            "file_format": Path(file_path).suffix[1:],  # Without the dot
+        }
 
-            self.write_to_json()
+        if transcript is not None and not self.transcribe_only:
+            summarization_start_time = time.time()
+            summary = await self.summarize(transcript)
+            summarization_time = time.time() - summarization_start_time
+            if summary is not None:
+                response['summary'] = summary.choices[0].message.content
+                response['summarization_time'] = summarization_time
 
-            if self.transcribe_only:
-                print(transcript)
-            else:
-                await self.summarize(transcript)
+        if self.flask and self.callback:
+            await self.callback(response)
+        else:
+            return response
 
     async def summarize(self, transcript):
         summarizer = Summarizer(transcript, self.prompt, self.system, self.model)
-        summary = await summarizer.summarize()
-        if summary is not None:
-            self.data_dict['prompt'] = self.prompt
-
-            # Extract only the serializable content from the summary
-            content = summary.choices[0].message.content
-            self.data_dict['summary'] = content  # Store only the content string
-
-            self.write_to_json()
-
-            if self.flask:
-                await self.callback(content)
+        try:
+            summary = await summarizer.summarize()
+            return summary
+        except BaseException as e:
+            if 'context_length_exceeded' in str(e):
+                logging.error(f'\nThe provided transcript is too long for the model. '
+                              f'The maximum context length is 4096 tokens, but the transcript '
+                              f'resulted in more than this limit. Please shorten the transcript and retry.\n')
             else:
-                self.callback(content)
-
-    def write_to_json(self):
-        now = datetime.datetime.now()
-        now_str = now.strftime('%Y-%m-%d_%H-%M-%S')
-        directory = 'output'
-        json_file = f'{directory}/{self.of}_{now_str}.json'
-
-        with open(json_file, 'w') as f:
-            json.dump(self.data_dict, f, indent=4)
+                logging.error(f'\nError during completion: {e}\n')
+            return None
+        
+    async def run(self):
+        logging.info(self.model)
+        if self.file_entry:
+            result = await self.transcribe_from_file(self.file_entry)  # Obtain result from transcription
+            return result  # Return the result back to the caller
+        else:
+            logging.error('\nError: Please provide a valid file path.\n')
+            return None  # Return None or an appropriate error indicator
 
     def __enter__(self):
         self.loop = asyncio.new_event_loop()
