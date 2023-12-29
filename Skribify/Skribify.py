@@ -9,6 +9,7 @@ from pydub import AudioSegment
 import shutil
 from openai import OpenAI
 from pathlib import Path
+import pkg_resources
 
 try:
     from .config import setup as config_setup
@@ -38,7 +39,9 @@ CHUNK_DURATION_MS = 2 * 60 * 1000  # 2 minutes
 TEMP_CHUNKS_DIR = "chunks"
 TRANSCRIPTION_MODEL = 'whisper-1'
 
-with open(Path('Skribify/prompt.txt'), 'r') as prompt_file:
+prompt_file_path = pkg_resources.resource_filename(__name__, 'prompt.txt')
+
+with open(prompt_file_path, 'r') as prompt_file:
     SYSTEM_PROMPT = prompt_file.read().strip()
 
 class Transcriber:

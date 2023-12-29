@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="Skribify",
-    version="0.1.9",
+    version="0.1.9.1",
     author="JFalnes",
     author_email="post@falnes.dev",
     description="A transcription and summarization tool",
@@ -27,4 +27,7 @@ setup(
         'python-dotenv',
         'pydub',
     ],
+    package_data={
+    "Skribify": ["prompt.txt"],  # Include prompt.txt in the Skribify package
+    },
 )
